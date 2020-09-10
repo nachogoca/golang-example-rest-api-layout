@@ -68,6 +68,22 @@ func (a Articles) GetOne(w http.ResponseWriter, r *http.Request) {
 // Create creates an article
 func (a Articles) Create(w http.ResponseWriter, r *http.Request) {
 
+	var article entities.Article
+	if err := json.NewDecoder(r.Body).Decode(&article); err != nil {
+		logrus.WithError(err).Error("could not decode request body into article entity")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	created, err := a.usecase.Create(r.Context(), article)
+	if err != nil {
+		logrus.WithError(err).Error("could not create article")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(created)
+	w.WriteHeader(http.StatusCreated)
 }
 
 // Update updates an article

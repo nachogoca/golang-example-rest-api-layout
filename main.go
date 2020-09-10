@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nachogoca/golang-example-rest-api-layout/internal/middleware"
+	"github.com/nachogoca/golang-example-rest-api-layout/internal/stores"
 	"github.com/nachogoca/golang-example-rest-api-layout/internal/transports"
 	"github.com/nachogoca/golang-example-rest-api-layout/internal/usecases"
 
@@ -21,7 +22,8 @@ func main() {
 
 	// Init service, usecase and transport layers
 	// Clean code architecture is used here
-	usecase := usecases.NewArticles()
+	store := stores.NewArticle()
+	usecase := usecases.NewArticles(store)
 	transport := transports.NewArticles(usecase)
 
 	// Init router
