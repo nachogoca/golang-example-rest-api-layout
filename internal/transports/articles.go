@@ -7,7 +7,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/nachogoca/golang-example-rest-api-layout/internal/entities.go"
+	"github.com/nachogoca/golang-example-rest-api-layout/internal/entities"
 )
 
 // run go generate ./... and the mocks will be generated

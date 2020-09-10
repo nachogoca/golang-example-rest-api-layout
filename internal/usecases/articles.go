@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nachogoca/golang-example-rest-api-layout/internal/entities.go"
+	"github.com/nachogoca/golang-example-rest-api-layout/internal/entities"
 )
 
 type Articles struct {

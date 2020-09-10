@@ -7,7 +7,7 @@ package mocks
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
-	entities_go "github.com/nachogoca/golang-example-rest-api-layout/internal/entities.go"
+	entities "github.com/nachogoca/golang-example-rest-api-layout/internal/entities"
 	reflect "reflect"
 )
 
@@ -35,10 +35,10 @@ func (m *MockArticlesUsecase) EXPECT() *MockArticlesUsecaseMockRecorder {
 }
 
 // Create mocks base method
-func (m *MockArticlesUsecase) Create(arg0 context.Context, arg1 entities_go.Article) (entities_go.Article, error) {
+func (m *MockArticlesUsecase) Create(arg0 context.Context, arg1 entities.Article) (entities.Article, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0, arg1)
-	ret0, _ := ret[0].(entities_go.Article)
+	ret0, _ := ret[0].(entities.Article)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -64,10 +64,10 @@ func (mr *MockArticlesUsecaseMockRecorder) Delete(arg0, arg1 interface{}) *gomoc
 }
 
 // GetAll mocks base method
-func (m *MockArticlesUsecase) GetAll(arg0 context.Context) ([]entities_go.Article, error) {
+func (m *MockArticlesUsecase) GetAll(arg0 context.Context) ([]entities.Article, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", arg0)
-	ret0, _ := ret[0].([]entities_go.Article)
+	ret0, _ := ret[0].([]entities.Article)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -79,10 +79,10 @@ func (mr *MockArticlesUsecaseMockRecorder) GetAll(arg0 interface{}) *gomock.Call
 }
 
 // GetOne mocks base method
-func (m *MockArticlesUsecase) GetOne(arg0 context.Context, arg1 string) (entities_go.Article, error) {
+func (m *MockArticlesUsecase) GetOne(arg0 context.Context, arg1 string) (entities.Article, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOne", arg0, arg1)
-	ret0, _ := ret[0].(entities_go.Article)
+	ret0, _ := ret[0].(entities.Article)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -94,10 +94,10 @@ func (mr *MockArticlesUsecaseMockRecorder) GetOne(arg0, arg1 interface{}) *gomoc
 }
 
 // Update mocks base method
-func (m *MockArticlesUsecase) Update(arg0 context.Context, arg1 entities_go.Article) (entities_go.Article, error) {
+func (m *MockArticlesUsecase) Update(arg0 context.Context, arg1 entities.Article) (entities.Article, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", arg0, arg1)
-	ret0, _ := ret[0].(entities_go.Article)
+	ret0, _ := ret[0].(entities.Article)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
