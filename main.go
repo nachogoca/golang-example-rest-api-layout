@@ -22,7 +22,12 @@ func main() {
 
 	// Init service, usecase and transport layers
 	// Clean code architecture is used here
-	store := stores.NewArticle()
+	store, err := stores.NewArticle()
+	if err != nil {
+		logrus.WithError(err).Fatal("could not init store")
+	}
+	defer store.Close()
+
 	usecase := usecases.NewArticles(store)
 	transport := transports.NewArticles(usecase)
 

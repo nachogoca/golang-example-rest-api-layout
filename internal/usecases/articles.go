@@ -9,6 +9,8 @@ import (
 	"github.com/nachogoca/golang-example-rest-api-layout/internal/entities"
 )
 
+const maxContentLen = 1000
+
 //go:generate mockgen -destination=./mocks/articles_mock.go -package=mocks github.com/nachogoca/golang-example-rest-api-layout/internal/usecases ArticlesStore
 
 // ArticlesStore describes all the functions we need from store layer
@@ -46,6 +48,11 @@ func (a Articles) GetOne(ctx context.Context, id string) (entities.Article, erro
 
 // Create creates an article
 func (a Articles) Create(ctx context.Context, article entities.Article) (entities.Article, error) {
+
+	// example of business logic applied, which should only live in the usecase layer
+	if len(article.Content) > maxContentLen {
+		return entities.Article{}, fmt.Errorf("article content is longer than allowed")
+	}
 
 	id := uuid.New().String()
 	art := entities.Article{
