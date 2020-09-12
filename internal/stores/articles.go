@@ -27,7 +27,13 @@ func NewArticle() (Articles, error) {
 		return Articles{}, fmt.Errorf("could not open sqlite file: %w", err)
 	}
 
-	sqlStmt := `create table articles (id integer not null primary key, name text);`
+	sqlStmt := `create table articles (	
+		id text not null primary key, 
+		created_at datetime not null,
+		updated_at datetime not null,
+		title text,
+		content text,
+		author text);`
 	_, err = db.Exec(sqlStmt)
 	if err != nil {
 		logrus.WithError(err).WithField("statement", sqlStmt).Error("could not execute init statement")
@@ -43,7 +49,10 @@ func NewArticle() (Articles, error) {
 }
 
 func (a Articles) Close() error {
-	os.Remove("./articles.db")
+	if err := os.Remove("./articles.db"); err != nil {
+		logrus.WithError(err).Warn("could not delete sqlite db file")
+		return err
+	}
 	return a.db.Close()
 }
 
@@ -82,16 +91,18 @@ func (a Articles) Create(ctx context.Context, article entities.Article) (entitie
 		return entities.Article{}, fmt.Errorf("could not exec insert query: %w", err)
 	}
 
-	id, err := res.LastInsertId()
+	affected, err := res.RowsAffected()
 	if err != nil {
-		logrus.WithError(err).Error("could not get inserted id")
-		return entities.Article{}, fmt.Errorf("could not get inserted id: %w", err)
+		logrus.WithError(err).Error("could not verify insertion")
+		return entities.Article{}, fmt.Errorf("could not verify insertion: %w", err)
+	}
+	if affected != 1 {
+		logrus.WithField("affected", affected).Error("row was not inserted")
+		return entities.Article{}, fmt.Errorf("row was not inserted")
 	}
 
-	logrus.WithField("id", id).Debug("inserted id")
-
-	return entities.Article{}, fmt.Errorf("not implemented yet")
-
+	// TODO Return from GET
+	return entities.Article{}, nil
 }
 
 // Update looks for the row with the article id, and updates all the columns

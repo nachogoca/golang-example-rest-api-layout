@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nachogoca/golang-example-rest-api-layout/internal/entities"
+	"github.com/sirupsen/logrus"
 )
 
 const maxContentLen = 1000
@@ -68,6 +69,7 @@ func (a Articles) Create(ctx context.Context, article entities.Article) (entitie
 	if err != nil {
 		return entities.Article{}, fmt.Errorf("could not create store: %w", err)
 	}
+	logrus.WithField("article", created).Debug("created entity")
 	return created, nil
 }
 

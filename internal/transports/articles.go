@@ -82,8 +82,13 @@ func (a Articles) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(created)
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(created); err != nil {
+		logrus.WithError(err).Error("could not encode article response")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 // Update updates an article
