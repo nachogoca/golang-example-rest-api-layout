@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"time"
 
 	"github.com/nachogoca/golang-example-rest-api-layout/internal/middlewares"
@@ -17,6 +18,9 @@ import (
 )
 
 func main() {
+	// The first defered call is the last to be executed
+	// os.Exit terminates the program
+	defer os.Exit(0)
 
 	logrus.SetLevel(logrus.DebugLevel)
 
@@ -73,5 +77,7 @@ func main() {
 	// Graceful shutdown
 	srv.Shutdown(ctx)
 	logrus.Warn("Shutting down gracefully")
-	os.Exit(0)
+
+	// Call all defered calls before closing server
+	runtime.Goexit()
 }

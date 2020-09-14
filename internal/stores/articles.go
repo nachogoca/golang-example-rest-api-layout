@@ -52,8 +52,9 @@ func NewArticles() (Articles, error) {
 	return Articles{db}, nil
 }
 
-// TODO Debug
+// Close cleans the database files
 func (a Articles) Close() error {
+	logrus.Warn("Deleting sqlite file")
 	if err := os.Remove("./articles.db"); err != nil {
 		logrus.WithError(err).Warn("could not delete sqlite db file")
 		return err
