@@ -45,7 +45,7 @@ func (a Articles) GetAll(ctx context.Context) ([]entities.Article, error) {
 		return nil, fmt.Errorf("could not get all articles: %w", err)
 	}
 
-	logrus.WithField("articles", len(articles)).Debug("found articles")
+	logrus.WithField("articles", len(articles)).Info("found articles")
 	return articles, nil
 }
 
@@ -63,7 +63,7 @@ func (a Articles) GetOne(ctx context.Context, id string) (entities.Article, erro
 		return entities.Article{}, fmt.Errorf("could not get article id %s: %w", id, err)
 	}
 
-	logrus.WithField("article", article).Debug("found article")
+	logrus.WithField("article", article).Info("article retrieved")
 	return article, nil
 }
 
@@ -89,7 +89,7 @@ func (a Articles) Create(ctx context.Context, article entities.Article) (entitie
 	if err != nil {
 		return entities.Article{}, fmt.Errorf("could not create article: %w", err)
 	}
-	logrus.WithField("article", created).Debug("created entity")
+	logrus.WithField("article", created).Info("article created")
 	return created, nil
 }
 
@@ -116,13 +116,29 @@ func (a Articles) Update(ctx context.Context, article entities.Article) (entitie
 	if err != nil {
 		return entities.Article{}, fmt.Errorf("could not update article: %w", err)
 	}
-	logrus.WithField("article", article).Debug("article updated")
+	logrus.WithField("article", updated).Info("article updated")
 
 	return updated, nil
 }
 
 // Delete removes an article
 func (a Articles) Delete(ctx context.Context, id string) error {
-	// TODO Implement
-	return fmt.Errorf("not implemented yet")
+	toDelete, err := a.GetOne(ctx, id)
+	if err != nil {
+		if errors.Is(err, consts.ErrEntityNotFound) {
+			logrus.WithError(err).WithField("id", id).Warn("could not get article")
+			return fmt.Errorf("article id %s not found %w", id, err)
+		}
+
+		logrus.WithError(err).WithField("id", id).Error("could not get article")
+		return fmt.Errorf("could not get article id %s: %w", id, err)
+	}
+	logrus.WithField("article", toDelete).Debug("found article to delete")
+
+	if err := a.store.Delete(ctx, id); err != nil {
+		return fmt.Errorf("could not delete article: %w", err)
+	}
+	logrus.WithField("id", id).Info("article deleted")
+
+	return nil
 }

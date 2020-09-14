@@ -197,6 +197,27 @@ func (a Articles) Update(ctx context.Context, article entities.Article) (entitie
 
 // Delete deletes the row
 func (a Articles) Delete(ctx context.Context, id string) error {
-	// TODO Implement
-	return fmt.Errorf("not implemented yet")
+
+	query, args, err := sq.Delete("articles").Where("id = ?", id).ToSql()
+	if err != nil {
+		return fmt.Errorf("could not build query: %w", err)
+	}
+	logrus.WithField("query", query).
+		WithField("args", args).
+		Debug("query to delete")
+
+	res, err := a.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("could not exec insert query: %w", err)
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("could not verify insertion: %w", err)
+	}
+	if affected != 1 {
+		return fmt.Errorf("row was not inserted")
+	}
+
+	return nil
 }

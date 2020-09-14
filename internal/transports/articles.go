@@ -163,5 +163,23 @@ func (a Articles) Update(w http.ResponseWriter, r *http.Request) {
 
 // Delete deletes an article
 func (a Articles) Delete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		logrus.WithField("vars", vars).Error("id not provided")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if err := a.usecase.Delete(r.Context(), id); err != nil {
+		logrus.WithError(err).Error("could not delete article")
+		if errors.Is(err, consts.ErrEntityNotFound) {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
