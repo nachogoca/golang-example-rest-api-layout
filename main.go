@@ -42,6 +42,7 @@ func main() {
 
 	// Set middlewares
 	r.Use(middlewares.RequestID)
+	r.Use(middlewares.Timing)
 	r.Use(middlewares.Logging)
 
 	// Init server with timeouts
