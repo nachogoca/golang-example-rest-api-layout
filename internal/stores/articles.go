@@ -10,6 +10,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/sirupsen/logrus"
 
+	"github.com/nachogoca/golang-example-rest-api-layout/internal/consts"
 	"github.com/nachogoca/golang-example-rest-api-layout/internal/entities"
 )
 
@@ -59,13 +60,72 @@ func (a Articles) Close() error {
 // GetAll returns all articles
 func (a Articles) GetAll(ctx context.Context) ([]entities.Article, error) {
 
-	return nil, fmt.Errorf("not implemented yet")
+	query, _, err := sq.Select("id", "created_at", "updated_at", "title", "content", "author").
+		From("articles").
+		ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("could not build getall query: %w", err)
+	}
 
+	logrus.WithField("query", query).Debug("query to get all articles")
+	rows, err := a.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("could not execute get all articles query: %w", err)
+	}
+
+	var articles []entities.Article
+	defer rows.Close()
+	for rows.Next() {
+
+		var article entities.Article
+		err := rows.Scan(&article.ID,
+			&article.CreatedAt,
+			&article.UpdatedAt,
+			&article.Title,
+			&article.Content,
+			&article.Author)
+		if err != nil {
+			return nil, fmt.Errorf("could not scan rows: %w", err)
+		}
+		articles = append(articles, article)
+
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("got err while reading rows: %w", err)
+	}
+
+	return articles, nil
 }
 
 // GetOne returns one article by id
 func (a Articles) GetOne(ctx context.Context, id string) (entities.Article, error) {
-	return entities.Article{}, fmt.Errorf("not implemented yet")
+
+	query, args, err := sq.Select("id", "created_at", "updated_at", "title", "content", "author").
+		From("articles").
+		Where("id = ?", id).
+		ToSql()
+	if err != nil {
+		return entities.Article{}, fmt.Errorf("could not build getone query: %w", err)
+	}
+
+	row := a.db.QueryRowContext(ctx, query, args...)
+	var article entities.Article
+	err = row.Scan(&article.ID,
+		&article.CreatedAt,
+		&article.UpdatedAt,
+		&article.Title,
+		&article.Content,
+		&article.Author)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return entities.Article{}, fmt.Errorf("article not found: %s: %w", err.Error(), consts.ErrEntityNotFound)
+		}
+
+		return entities.Article{}, fmt.Errorf("could not scan row: %w", err)
+	}
+
+	return article, nil
 
 }
 
@@ -77,7 +137,6 @@ func (a Articles) Create(ctx context.Context, article entities.Article) (entitie
 		Values(article.ID, article.CreatedAt, article.UpdatedAt, article.Title, article.Content, article.Author).
 		ToSql()
 	if err != nil {
-		logrus.WithError(err).Error("could not build insert query")
 		return entities.Article{}, fmt.Errorf("could not build query: %w", err)
 	}
 
@@ -87,22 +146,18 @@ func (a Articles) Create(ctx context.Context, article entities.Article) (entitie
 
 	res, err := a.db.ExecContext(ctx, query, args...)
 	if err != nil {
-		logrus.WithError(err).Error("could not exec query")
 		return entities.Article{}, fmt.Errorf("could not exec insert query: %w", err)
 	}
 
 	affected, err := res.RowsAffected()
 	if err != nil {
-		logrus.WithError(err).Error("could not verify insertion")
 		return entities.Article{}, fmt.Errorf("could not verify insertion: %w", err)
 	}
 	if affected != 1 {
-		logrus.WithField("affected", affected).Error("row was not inserted")
 		return entities.Article{}, fmt.Errorf("row was not inserted")
 	}
 
-	// TODO Return from GET
-	return entities.Article{}, nil
+	return a.GetOne(ctx, article.ID)
 }
 
 // Update looks for the row with the article id, and updates all the columns

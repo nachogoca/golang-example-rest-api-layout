@@ -2,10 +2,12 @@ package usecases
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/nachogoca/golang-example-rest-api-layout/internal/consts"
 	"github.com/nachogoca/golang-example-rest-api-layout/internal/entities"
 	"github.com/sirupsen/logrus"
 )
@@ -37,14 +39,32 @@ func NewArticles(as ArticlesStore) Articles {
 // GetAll returns all articles
 func (a Articles) GetAll(ctx context.Context) ([]entities.Article, error) {
 
-	return nil, fmt.Errorf("not implemented yet")
+	articles, err := a.store.GetAll(ctx)
+	if err != nil {
+		logrus.WithError(err).Error("could not get all articles")
+		return nil, fmt.Errorf("could not get all articles: %w", err)
+	}
 
+	logrus.WithField("articles", len(articles)).Debug("found articles")
+	return articles, nil
 }
 
 // GetOne returns one article given an id
 func (a Articles) GetOne(ctx context.Context, id string) (entities.Article, error) {
-	return entities.Article{}, fmt.Errorf("not implemented yet")
 
+	article, err := a.store.GetOne(ctx, id)
+	if err != nil {
+		if errors.Is(err, consts.ErrEntityNotFound) {
+			logrus.WithError(err).WithField("id", id).Warn("could not get article")
+			return entities.Article{}, fmt.Errorf("article id %s not found %w", id, err)
+		}
+
+		logrus.WithError(err).WithField("id", id).Error("could not get article")
+		return entities.Article{}, fmt.Errorf("could not get article id %s: %w", id, err)
+	}
+
+	logrus.WithField("article", article).Debug("found article")
+	return article, nil
 }
 
 // Create creates an article

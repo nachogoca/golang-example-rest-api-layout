@@ -3,10 +3,13 @@ package transports
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 
+	"github.com/nachogoca/golang-example-rest-api-layout/internal/consts"
 	"github.com/nachogoca/golang-example-rest-api-layout/internal/entities"
 )
 
@@ -44,25 +47,47 @@ func (a Articles) GetAll(w http.ResponseWriter, r *http.Request) {
 	articles, err := a.usecase.GetAll(r.Context())
 	if err != nil {
 		logrus.WithError(err).Error("could not get all articles")
-		// TODO err according to err
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	b, err := json.Marshal(articles)
-	if err != nil {
-		logrus.WithError(err).Error("could not marshal response")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	w.Write(b)
 	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(articles); err != nil {
+		logrus.WithError(err).Error("could not encode response")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 // GetOne returns one article
 func (a Articles) GetOne(w http.ResponseWriter, r *http.Request) {
 
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		logrus.WithField("vars", vars).Error("id not provided")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	article, err := a.usecase.GetOne(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, consts.ErrEntityNotFound) {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		logrus.WithError(err).Error("could not find article")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(article); err != nil {
+		logrus.WithError(err).Error("could not encode response")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 // Create creates an article
