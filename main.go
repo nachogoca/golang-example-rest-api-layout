@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/nachogoca/golang-example-rest-api-layout/internal/middleware"
+	"github.com/nachogoca/golang-example-rest-api-layout/internal/middlewares"
 	"github.com/nachogoca/golang-example-rest-api-layout/internal/stores"
 	"github.com/nachogoca/golang-example-rest-api-layout/internal/transports"
 	"github.com/nachogoca/golang-example-rest-api-layout/internal/usecases"
@@ -22,7 +22,7 @@ func main() {
 
 	// Init service, usecase and transport layers
 	// Clean code architecture is used here
-	store, err := stores.NewArticle()
+	store, err := stores.NewArticles()
 	if err != nil {
 		logrus.WithError(err).Fatal("could not init store")
 	}
@@ -41,7 +41,8 @@ func main() {
 	s.HandleFunc("/{id}", transport.Delete).Methods("DELETE")
 
 	// Set middlewares
-	r.Use(middleware.Logging)
+	r.Use(middlewares.RequestID)
+	r.Use(middlewares.Logging)
 
 	// Init server with timeouts
 	srv := &http.Server{

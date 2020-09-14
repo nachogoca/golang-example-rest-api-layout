@@ -7,18 +7,21 @@ import (
 	"os"
 
 	sq "github.com/Masterminds/squirrel"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/mattn/go-sqlite3" // sqlite driver
 	"github.com/sirupsen/logrus"
 
 	"github.com/nachogoca/golang-example-rest-api-layout/internal/consts"
 	"github.com/nachogoca/golang-example-rest-api-layout/internal/entities"
+	"github.com/nachogoca/golang-example-rest-api-layout/internal/middlewares"
 )
 
+// Articles is the articles store that connects with sqlite
 type Articles struct {
 	db *sql.DB
 }
 
-func NewArticle() (Articles, error) {
+// NewArticles is the store constructor
+func NewArticles() (Articles, error) {
 
 	os.Remove("./articles.db")
 
@@ -60,6 +63,7 @@ func (a Articles) Close() error {
 
 // GetAll returns all articles
 func (a Articles) GetAll(ctx context.Context) ([]entities.Article, error) {
+	log := logrus.WithField("request_id", middlewares.GetRequestID(ctx))
 
 	query, _, err := sq.Select("id", "created_at", "updated_at", "title", "content", "author").
 		From("articles").
@@ -68,7 +72,7 @@ func (a Articles) GetAll(ctx context.Context) ([]entities.Article, error) {
 		return nil, fmt.Errorf("could not build getall query: %w", err)
 	}
 
-	logrus.WithField("query", query).Debug("query to get all articles")
+	log.WithField("query", query).Debug("query to get all articles")
 	rows, err := a.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("could not execute get all articles query: %w", err)
@@ -101,6 +105,7 @@ func (a Articles) GetAll(ctx context.Context) ([]entities.Article, error) {
 
 // GetOne returns one article by id
 func (a Articles) GetOne(ctx context.Context, id string) (entities.Article, error) {
+	log := logrus.WithField("request_id", middlewares.GetRequestID(ctx))
 
 	query, args, err := sq.Select("id", "created_at", "updated_at", "title", "content", "author").
 		From("articles").
@@ -109,6 +114,9 @@ func (a Articles) GetOne(ctx context.Context, id string) (entities.Article, erro
 	if err != nil {
 		return entities.Article{}, fmt.Errorf("could not build getone query: %w", err)
 	}
+	log.WithField("query", query).
+		WithField("args", args).
+		Debug("query to get one")
 
 	row := a.db.QueryRowContext(ctx, query, args...)
 	var article entities.Article
@@ -132,6 +140,7 @@ func (a Articles) GetOne(ctx context.Context, id string) (entities.Article, erro
 
 // Create inserts an article row
 func (a Articles) Create(ctx context.Context, article entities.Article) (entities.Article, error) {
+	log := logrus.WithField("request_id", middlewares.GetRequestID(ctx))
 
 	query, args, err := sq.Insert("articles").
 		Columns("id", "created_at", "updated_at", "title", "content", "author").
@@ -141,7 +150,7 @@ func (a Articles) Create(ctx context.Context, article entities.Article) (entitie
 		return entities.Article{}, fmt.Errorf("could not build query: %w", err)
 	}
 
-	logrus.WithField("query", query).
+	log.WithField("query", query).
 		WithField("args", args).
 		Debug("query to insert")
 
@@ -163,6 +172,7 @@ func (a Articles) Create(ctx context.Context, article entities.Article) (entitie
 
 // Update looks for the row with the article id, and updates all the columns
 func (a Articles) Update(ctx context.Context, article entities.Article) (entities.Article, error) {
+	log := logrus.WithField("request_id", middlewares.GetRequestID(ctx))
 
 	query, args, err := sq.Update("articles").SetMap(map[string]interface{}{
 		"updated_at": article.UpdatedAt,
@@ -175,7 +185,7 @@ func (a Articles) Update(ctx context.Context, article entities.Article) (entitie
 	if err != nil {
 		return entities.Article{}, fmt.Errorf("could not build query: %w", err)
 	}
-	logrus.WithField("query", query).
+	log.WithField("query", query).
 		WithField("args", args).
 		Debug("query to update")
 
@@ -197,12 +207,13 @@ func (a Articles) Update(ctx context.Context, article entities.Article) (entitie
 
 // Delete deletes the row
 func (a Articles) Delete(ctx context.Context, id string) error {
+	log := logrus.WithField("request_id", middlewares.GetRequestID(ctx))
 
 	query, args, err := sq.Delete("articles").Where("id = ?", id).ToSql()
 	if err != nil {
 		return fmt.Errorf("could not build query: %w", err)
 	}
-	logrus.WithField("query", query).
+	log.WithField("query", query).
 		WithField("args", args).
 		Debug("query to delete")
 

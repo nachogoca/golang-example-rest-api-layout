@@ -7,9 +7,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+
 	"github.com/nachogoca/golang-example-rest-api-layout/internal/consts"
 	"github.com/nachogoca/golang-example-rest-api-layout/internal/entities"
-	"github.com/sirupsen/logrus"
+	"github.com/nachogoca/golang-example-rest-api-layout/internal/middlewares"
 )
 
 const maxContentLen = 1000
@@ -38,37 +40,40 @@ func NewArticles(as ArticlesStore) Articles {
 
 // GetAll returns all articles
 func (a Articles) GetAll(ctx context.Context) ([]entities.Article, error) {
+	log := logrus.WithField("request_id", middlewares.GetRequestID(ctx))
 
 	articles, err := a.store.GetAll(ctx)
 	if err != nil {
-		logrus.WithError(err).Error("could not get all articles")
+		log.WithError(err).Error("could not get all articles")
 		return nil, fmt.Errorf("could not get all articles: %w", err)
 	}
 
-	logrus.WithField("articles", len(articles)).Info("found articles")
+	log.WithField("articles", len(articles)).Info("found articles")
 	return articles, nil
 }
 
 // GetOne returns one article given an id
 func (a Articles) GetOne(ctx context.Context, id string) (entities.Article, error) {
+	log := logrus.WithField("request_id", middlewares.GetRequestID(ctx))
 
 	article, err := a.store.GetOne(ctx, id)
 	if err != nil {
 		if errors.Is(err, consts.ErrEntityNotFound) {
-			logrus.WithError(err).WithField("id", id).Warn("could not get article")
+			log.WithError(err).WithField("id", id).Warn("could not get article")
 			return entities.Article{}, fmt.Errorf("article id %s not found %w", id, err)
 		}
 
-		logrus.WithError(err).WithField("id", id).Error("could not get article")
+		log.WithError(err).WithField("id", id).Error("could not get article")
 		return entities.Article{}, fmt.Errorf("could not get article id %s: %w", id, err)
 	}
 
-	logrus.WithField("article", article).Info("article retrieved")
+	log.WithField("article", article).Info("article retrieved")
 	return article, nil
 }
 
 // Create creates an article
 func (a Articles) Create(ctx context.Context, article entities.Article) (entities.Article, error) {
+	log := logrus.WithField("request_id", middlewares.GetRequestID(ctx))
 
 	// example of business logic applied, which should only live in the usecase layer
 	if len(article.Content) > maxContentLen {
@@ -89,24 +94,25 @@ func (a Articles) Create(ctx context.Context, article entities.Article) (entitie
 	if err != nil {
 		return entities.Article{}, fmt.Errorf("could not create article: %w", err)
 	}
-	logrus.WithField("article", created).Info("article created")
+	log.WithField("article", created).Info("article created")
 	return created, nil
 }
 
 // Update updates the attributes of an article
 func (a Articles) Update(ctx context.Context, article entities.Article) (entities.Article, error) {
+	log := logrus.WithField("request_id", middlewares.GetRequestID(ctx))
 
 	toUpdate, err := a.GetOne(ctx, article.ID)
 	if err != nil {
 		if errors.Is(err, consts.ErrEntityNotFound) {
-			logrus.WithError(err).WithField("id", article.ID).Warn("could not get article")
+			log.WithError(err).WithField("id", article.ID).Warn("could not get article")
 			return entities.Article{}, fmt.Errorf("article id %s not found %w", article.ID, err)
 		}
 
-		logrus.WithError(err).WithField("id", article.ID).Error("could not get article")
+		log.WithError(err).WithField("id", article.ID).Error("could not get article")
 		return entities.Article{}, fmt.Errorf("could not get article id %s: %w", article.ID, err)
 	}
-	logrus.WithField("article", article).Debug("found article to update")
+	log.WithField("article", article).Debug("found article to update")
 	toUpdate.Title = article.Title
 	toUpdate.Content = article.Content
 	toUpdate.Author = article.Author
@@ -116,29 +122,31 @@ func (a Articles) Update(ctx context.Context, article entities.Article) (entitie
 	if err != nil {
 		return entities.Article{}, fmt.Errorf("could not update article: %w", err)
 	}
-	logrus.WithField("article", updated).Info("article updated")
+	log.WithField("article", updated).Info("article updated")
 
 	return updated, nil
 }
 
 // Delete removes an article
 func (a Articles) Delete(ctx context.Context, id string) error {
+	log := logrus.WithField("request_id", middlewares.GetRequestID(ctx))
+
 	toDelete, err := a.GetOne(ctx, id)
 	if err != nil {
 		if errors.Is(err, consts.ErrEntityNotFound) {
-			logrus.WithError(err).WithField("id", id).Warn("could not get article")
+			log.WithError(err).WithField("id", id).Warn("could not get article")
 			return fmt.Errorf("article id %s not found %w", id, err)
 		}
 
-		logrus.WithError(err).WithField("id", id).Error("could not get article")
+		log.WithError(err).WithField("id", id).Error("could not get article")
 		return fmt.Errorf("could not get article id %s: %w", id, err)
 	}
-	logrus.WithField("article", toDelete).Debug("found article to delete")
+	log.WithField("article", toDelete).Debug("found article to delete")
 
 	if err := a.store.Delete(ctx, id); err != nil {
 		return fmt.Errorf("could not delete article: %w", err)
 	}
-	logrus.WithField("id", id).Info("article deleted")
+	log.WithField("id", id).Info("article deleted")
 
 	return nil
 }
