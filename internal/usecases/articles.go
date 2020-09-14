@@ -78,8 +78,8 @@ func (a Articles) Create(ctx context.Context, article entities.Article) (entitie
 	id := uuid.New().String()
 	art := entities.Article{
 		ID:        id,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 		Title:     article.Title,
 		Content:   article.Content,
 		Author:    article.Author,
@@ -87,7 +87,7 @@ func (a Articles) Create(ctx context.Context, article entities.Article) (entitie
 
 	created, err := a.store.Create(ctx, art)
 	if err != nil {
-		return entities.Article{}, fmt.Errorf("could not create store: %w", err)
+		return entities.Article{}, fmt.Errorf("could not create article: %w", err)
 	}
 	logrus.WithField("article", created).Debug("created entity")
 	return created, nil
@@ -95,11 +95,34 @@ func (a Articles) Create(ctx context.Context, article entities.Article) (entitie
 
 // Update updates the attributes of an article
 func (a Articles) Update(ctx context.Context, article entities.Article) (entities.Article, error) {
-	return entities.Article{}, fmt.Errorf("not implemented yet")
 
+	toUpdate, err := a.GetOne(ctx, article.ID)
+	if err != nil {
+		if errors.Is(err, consts.ErrEntityNotFound) {
+			logrus.WithError(err).WithField("id", article.ID).Warn("could not get article")
+			return entities.Article{}, fmt.Errorf("article id %s not found %w", article.ID, err)
+		}
+
+		logrus.WithError(err).WithField("id", article.ID).Error("could not get article")
+		return entities.Article{}, fmt.Errorf("could not get article id %s: %w", article.ID, err)
+	}
+	logrus.WithField("article", article).Debug("found article to update")
+	toUpdate.Title = article.Title
+	toUpdate.Content = article.Content
+	toUpdate.Author = article.Author
+	toUpdate.UpdatedAt = time.Now().UTC()
+
+	updated, err := a.store.Update(ctx, toUpdate)
+	if err != nil {
+		return entities.Article{}, fmt.Errorf("could not update article: %w", err)
+	}
+	logrus.WithField("article", article).Debug("article updated")
+
+	return updated, nil
 }
 
 // Delete removes an article
 func (a Articles) Delete(ctx context.Context, id string) error {
+	// TODO Implement
 	return fmt.Errorf("not implemented yet")
 }

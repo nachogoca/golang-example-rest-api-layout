@@ -49,6 +49,7 @@ func NewArticle() (Articles, error) {
 	return Articles{db}, nil
 }
 
+// TODO Debug
 func (a Articles) Close() error {
 	if err := os.Remove("./articles.db"); err != nil {
 		logrus.WithError(err).Warn("could not delete sqlite db file")
@@ -162,11 +163,40 @@ func (a Articles) Create(ctx context.Context, article entities.Article) (entitie
 
 // Update looks for the row with the article id, and updates all the columns
 func (a Articles) Update(ctx context.Context, article entities.Article) (entities.Article, error) {
-	return entities.Article{}, fmt.Errorf("not implemented yet")
 
+	query, args, err := sq.Update("articles").SetMap(map[string]interface{}{
+		"updated_at": article.UpdatedAt,
+		"title":      article.Title,
+		"content":    article.Content,
+		"author":     article.Author,
+	}).Where("id = ?", article.ID).
+		ToSql()
+
+	if err != nil {
+		return entities.Article{}, fmt.Errorf("could not build query: %w", err)
+	}
+	logrus.WithField("query", query).
+		WithField("args", args).
+		Debug("query to update")
+
+	res, err := a.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return entities.Article{}, fmt.Errorf("could not exec insert query: %w", err)
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return entities.Article{}, fmt.Errorf("could not verify insertion: %w", err)
+	}
+	if affected != 1 {
+		return entities.Article{}, fmt.Errorf("row was not inserted")
+	}
+
+	return a.GetOne(ctx, article.ID)
 }
 
 // Delete deletes the row
 func (a Articles) Delete(ctx context.Context, id string) error {
+	// TODO Implement
 	return fmt.Errorf("not implemented yet")
 }

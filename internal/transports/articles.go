@@ -51,6 +51,8 @@ func (a Articles) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO Debug empty case
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(articles); err != nil {
 		logrus.WithError(err).Error("could not encode response")
@@ -82,6 +84,7 @@ func (a Articles) GetOne(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(article); err != nil {
 		logrus.WithError(err).Error("could not encode response")
@@ -118,7 +121,41 @@ func (a Articles) Create(w http.ResponseWriter, r *http.Request) {
 
 // Update updates an article
 func (a Articles) Update(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		logrus.WithField("vars", vars).Error("id not provided")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
+	var article entities.Article
+	if err := json.NewDecoder(r.Body).Decode(&article); err != nil {
+		logrus.WithError(err).Error("could not decode request body into article entity")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	article.ID = id
+
+	created, err := a.usecase.Update(r.Context(), article)
+	if err != nil {
+		logrus.WithError(err).Error("could not update article")
+		if errors.Is(err, consts.ErrEntityNotFound) {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(created); err != nil {
+		logrus.WithError(err).Error("could not encode article response")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 // Delete deletes an article

@@ -14,3 +14,5 @@ func Logging(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+// TODO Request ID middleware
