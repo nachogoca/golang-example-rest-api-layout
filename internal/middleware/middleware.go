@@ -16,3 +16,4 @@ func Logging(next http.Handler) http.Handler {
 }
 
 // TODO Request ID middleware
+// TODO Timing middleware

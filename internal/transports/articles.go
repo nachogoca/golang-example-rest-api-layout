@@ -51,7 +51,10 @@ func (a Articles) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO Debug empty case
+	// To respond empty array instead of nil
+	if articles == nil {
+		articles = []entities.Article{}
+	}
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(articles); err != nil {
